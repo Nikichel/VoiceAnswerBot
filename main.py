@@ -6,7 +6,7 @@ import asyncio
 import ai_helper.ai_helper as AI
 from config import TOKEN_API_BOT
 
-import file_manager.file_manager as file_manager
+from file_manager.file_manager import FileManager
 
 TOKEN_API = TOKEN_API_BOT
 bot = Bot(TOKEN_API)
@@ -16,24 +16,29 @@ ai = AI.AI()
 
 @dp.message(F.voice)
 async def voice_message_handler(message:Message):
-        
-    file_name = await file_manager.get_voice_file(bot, message)
 
-    await message.answer("Голосовое сообщение получено!")
-    question = await ai.voice_to_text(file_name)
+    if ai.permission is True:
+        file_name = await FileManager.get_voice_file(bot, message)
 
-    await message.answer("Получаю ответ...")
-    answer, status = await ai.get_answer(question)
- 
-    if(status is False):
-        message.reply(answer)
+        await message.answer("Голосовое сообщение получено!")
+        question = await ai.voice_to_text(file_name)
 
+        await message.answer("Получаю ответ...")
+        answer, status = await ai.get_answer(question)
+    
+        if(status is False):
+            message.reply(answer)
+
+        else:
+            await message.answer("Конвертирую в аудиофаил...")
+            audio = await ai.text_to_voice(file_name, answer)
+            await bot.send_voice(message.chat.id, audio, reply_to_message_id=message.message_id)
+
+        FileManager.remove_files(file_name)
+    
     else:
-        await message.answer("Конвертирую в аудиофаил...")
-        audio = await ai.text_to_voice(file_name, answer)
-        await bot.send_voice(message.chat.id, audio, reply_to_message_id=message.message_id)
-
-    file_manager.remove_files(file_name)
+        error_answer = "К сожалению, использование чат-бота запрещено в вашем регионе :("
+        await message.reply(error_answer)
 
 @dp.message(Command("start"))
 async def start_handler(message: Message):
@@ -49,6 +54,7 @@ async def default_handler(message: Message):
     await message.answer("Отправь голосовое сообщение с вопросом, а я отвечу на него!")
 
 async def main():
+   await ai.init_assistant()
    await bot.delete_webhook(drop_pending_updates=True)
    await dp.start_polling(bot)
 
