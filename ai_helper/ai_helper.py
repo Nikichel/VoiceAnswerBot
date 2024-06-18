@@ -62,17 +62,12 @@ class AI:
         else:
             return "Задача все еще выполняется или имеет неизвестный статус.", False
 
-        messages = await AI.__client.beta.threads.messages.list(
-            thread_id=thread.id,
-        )
-
     #Конвертация голоса в текст (Whisper OpenAI API)
     async def voice_to_text(self, file_name):
-        audio_file = open(f"{file_name}.wav", "rb")
-        question = await AI.__client.audio.transcriptions.create(
-            model="whisper-1", 
-            file=audio_file, 
-            response_format="text"
-        )
-        audio_file.close()
+        with open(f"{file_name}.wav", "rb") as audio_file:
+            question = await AI.__client.audio.transcriptions.create(
+                model="whisper-1", 
+                file=audio_file, 
+                response_format="text"
+            )
         return question

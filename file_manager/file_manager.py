@@ -4,9 +4,9 @@ import time
 
 class FileManager:
 
-    @staticmethod
-    #Удаление всех файлов, которые были созданы для ответа
-    def remove_files(file_name):
+    @classmethod
+    # Удаление всех файлов, которые были созданы для ответа
+    def remove_files(cls, file_name):
         mp3_file = f"{file_name}.mp3"
         ogg_file = mp3_file.replace('.mp3', '.ogg')
         wav_file = mp3_file.replace('.mp3', '.wav')
@@ -18,9 +18,9 @@ class FileManager:
         if os.path.exists(wav_file):
             os.remove(wav_file)
 
-    @staticmethod
-    #Получение голосового сообщения и генерация названия файла
-    async def get_voice_file(bot, message):
+    @classmethod
+    # Получение голосового сообщения и генерация названия файла
+    async def get_voice_file(cls, bot, message):
         file_name = f'{message.from_user.id}_{time.time()}'
         ogg_file = f'{file_name}.ogg'
         wav_file = ogg_file.replace('.ogg', '.wav')
