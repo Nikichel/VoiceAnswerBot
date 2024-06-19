@@ -11,7 +11,7 @@ assistant_tools=[
                                     "values": {
                                         "type": "array",
                                         "items": {"type": "string"},
-                                        "description": "The list of key values identified in the user's message"
+                                        "description": "The list of key values identified in the user's message. Values must be in Russian. The value starts with capital letter"
                                     }
                                 },
                                 "required": ["values"]
@@ -26,7 +26,7 @@ valid_tools=[
                     "type": "function",
                     "function": {
                         "name": "is_life_value",
-                        "description": "Check if the value is a key life value",
+                        "description": "Check if the value is a key life value in Russian",
                         "parameters": {
                             "type": "object",
                             "properties": {

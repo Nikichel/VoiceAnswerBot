@@ -3,11 +3,14 @@ from aiogram.types import FSInputFile
 from config import TOKEN_API_CLIENT
 from ai_helper.ai_tools import valid_tools, assistant_tools
 import json
+
+from database.database import DataBaseHelper
 #Класс для работы с OpenAI
 class AI:
 
     __client = openai.AsyncOpenAI(api_key=TOKEN_API_CLIENT)
     __assistant = None
+    __db = DataBaseHelper()
 
     async def init_assistant(self, assistant_id = None):
         try:
@@ -18,8 +21,8 @@ class AI:
                 self.__assistant = await self.__client.beta.assistants.create(
                     name="VoiceAnswers",
                     instructions="""
-                            You are the chat assistant. You can answer questions and participate in the conversation. 
-                            Analyze the user messages and try to identify the user's key life values based on your
+                            You are the Russian chat assistant. You can answer questions and participate in the conversation. 
+                            Analyze the user messages and try to identify the user's key values based on your
                             communication. If any values are found, then call the save_value function. Don't forget 
                             to continue your ordinary dialogue with the user after you call save_value function.
                         """,
@@ -88,11 +91,12 @@ class AI:
             print(tool.function.arguments)
             value_dict = json.loads(tool.function.arguments)
             values = value_dict.get('values', [])
+
             tool_outputs.append({
                         "tool_call_id": tool.id,
                         "output": tool.function.arguments
                     })
-                    #отправятся на валидацию
+                    
             userid_and_values.append({
                         "values": values,
                         "user_id": user_id
@@ -114,15 +118,14 @@ class AI:
                 is_valid = await self.is_life_value(value, question)
                 if is_valid:
                     print(f"User ID: {item['user_id']}, Value: {value}")
-                    #сохраняем в бд корректную жизеннную ценность
-                    #await save_user_value(user_id=item['chat_id'], value=value)
+                    
+                    await self.__db.insert_data(user_id=item['user_id'], value=value)
                 else:
                     print(f"Value '{value}' is not a key life value for user ID {item['user_id']}")
-        #logging.info("Values saved to database")
 
     async def is_life_value(self, value: str, question: str) -> bool:
         messages=[
-            {"role": "user", "content": f"Is \"{value}\" a key life value for this question \"{question}\"? Answer only true or false."}
+            {"role": "user", "content": f"Is \"{value}\" a key life value for question \"{question}\"? Answer only true or false."}
         ]
         
         try:
