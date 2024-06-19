@@ -4,9 +4,12 @@ from aiogram.types import Message
 
 import asyncio  
 import ai_helper.ai_helper as AI
-from config import TOKEN_API_BOT
+from config import TOKEN_API_BOT, ID_ASSISTANT
 
+import database.database
 from file_manager.file_manager import FileManager
+
+import database
 
 TOKEN_API = TOKEN_API_BOT
 bot = Bot(TOKEN_API)
@@ -24,7 +27,7 @@ async def voice_message_handler(message:Message):
         question = await ai.voice_to_text(file_name)
 
         await message.answer("Получаю ответ...")
-        answer, status = await ai.get_answer(question)
+        answer, status = await ai.get_answer(question, message.from_user.id)
     
         if(status is False):
             message.reply(answer)
@@ -54,7 +57,7 @@ async def default_handler(message: Message):
     await message.answer("Отправь голосовое сообщение с вопросом, а я отвечу на него!")
 
 async def main():
-   await ai.init_assistant()
+   await ai.init_assistant(ID_ASSISTANT)
    await bot.delete_webhook(drop_pending_updates=True)
    await dp.start_polling(bot)
 
