@@ -28,12 +28,12 @@ valid_tools=[
                         "name": "is_life_value",
                         "description": "Check if the value is a key life value in Russian",
                         "parameters": {
-                            "type": "boolean",
+                            "type": "object",
                             "properties": {
                                 "is_value": {
-                                    "type": "string",
+                                    "type": "boolean",
                                     "description": """
-                                            Contains only 'true' or 'false' string.                             
+                                            Contains only 'true' or 'false' boolean.                             
                                             This string represents the answer to the user's question is whether the
                                             provided value is a valid life value or contains nonsense.
                                             Contains 'true' means values are defined correctly, do not contain nonsense. 

@@ -5,6 +5,7 @@ from ai_helper.ai_tools import valid_tools, assistant_tools
 import json
 
 from database.database import DataBaseHelper
+from file_manager.file_manager import FileManager
 #Класс для работы с OpenAI
 class AI:
 
@@ -155,3 +156,34 @@ class AI:
                 response_format="text"
             )
         return question
+    
+    async def image_to_mood(self, photo):
+        base64_image = await FileManager.encode_image(photo)
+        try:
+            response = await  AI.__client.chat.completions.create(
+                model="gpt-4o",
+                messages=[
+                    {
+                    "role": "user",
+                    "content": [
+                        {
+                        "type": "text",
+                        "text": "Identify the emotions in the pictures and return only the names of the emotions you identified without comments. Emotions must be in Russian"
+                        },
+                        {
+                        "type": "image_url",
+                        "image_url": {
+                            "url": f"data:image/jpeg;base64,{base64_image}"
+                        }
+                        }
+                    ]
+                    }
+                ],
+                max_tokens=300,
+            )
+            content = response.choices[0].message.content
+            return str(content)
+        except Exception as e:
+            print(f"Failed to get mood: {e}")
+            return None
+
