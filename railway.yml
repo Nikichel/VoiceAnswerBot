@@ -1,0 +1,3 @@
+build:
+  env: python3.11
+  dockerfile: Dockerfile
