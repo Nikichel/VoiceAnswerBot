@@ -28,7 +28,6 @@ class AI:
                         """,
                     model='gpt-4',
                     tools= assistant_tools
-                    
                 )
                 print(self.__assistant.id)
                 self.permission = True
@@ -118,7 +117,6 @@ class AI:
                 is_valid = await self.is_life_value(value, question)
                 if is_valid:
                     print(f"User ID: {item['user_id']}, Value: {value}")
-                    
                     await self.__db.insert_data(user_id=item['user_id'], value=value)
                 else:
                     print(f"Value '{value}' is not a key life value for user ID {item['user_id']}")
@@ -132,7 +130,8 @@ class AI:
             response = await AI.__client.chat.completions.create(
                 model="gpt-4",
                 messages=messages,
-                tools=valid_tools
+                tools=valid_tools,
+                tool_choice="required"
             )
             tool_calls = response.choices[0].message.tool_calls
             if tool_calls:
@@ -142,7 +141,7 @@ class AI:
                         print(function_arguments)
                         is_value = function_arguments['is_value']
                         print(is_value)
-            return is_value in ["true", "True"]
+            return is_value
         except Exception as e:
             print(f"Error while checking if '{value}' is a key life value: {e}")
             return False

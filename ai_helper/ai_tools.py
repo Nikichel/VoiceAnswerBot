@@ -28,7 +28,7 @@ valid_tools=[
                         "name": "is_life_value",
                         "description": "Check if the value is a key life value in Russian",
                         "parameters": {
-                            "type": "object",
+                            "type": "boolean",
                             "properties": {
                                 "is_value": {
                                     "type": "string",
