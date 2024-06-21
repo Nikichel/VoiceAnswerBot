@@ -14,6 +14,7 @@ class AI:
     __db = DataBaseHelper()
 
     async def init_assistant(self, assistant_id = None):
+        await self.__db.create_table()
         try:
             if(assistant_id is not None):
                     self.__assistant = await self.__client.beta.assistants.retrieve(assistant_id=assistant_id)
