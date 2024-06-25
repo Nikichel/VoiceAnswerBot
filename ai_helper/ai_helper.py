@@ -6,6 +6,7 @@ import json
 
 from database.database import DataBaseHelper
 from file_manager.file_manager import FileManager
+
 #Класс для работы с OpenAI
 class AI:
 
@@ -188,3 +189,35 @@ class AI:
             print(f"Failed to get mood: {e}")
             return None
 
+
+    async def update_assistant(self):
+
+        vector_store = await AI.__client.beta.vector_stores.create(name="anxiety")
+
+        file_paths = ["anxiety.docx"]
+        file_streams = [open(path, "rb") for path in file_paths]
+
+        await AI.__client.beta.vector_stores.file_batches.upload_and_poll(
+            vector_store_id=vector_store.id, files=file_streams
+        )
+
+        current_instructions = self.__assistant.instructions
+        additional_instructions= """
+            If the user asks a question about anxiety, then use the file_search
+            function to find the answer, when sending the answer to the user,
+            always add the file name after the quoted text.
+            """
+        updated_instructions = f"{current_instructions}\n{additional_instructions}"
+        current_tools = self.__assistant.tools
+        new_tools = [
+            {
+                "type": "file_search",
+            }
+        ]        
+        updated_tools = current_tools + new_tools
+        self.__assistant = await AI.__client.beta.assistants.update(
+            assistant_id=self.__assistant.id,
+            tools=updated_tools,
+            tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}},
+            instructions=updated_instructions,
+        )

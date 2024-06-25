@@ -76,6 +76,7 @@ async def default_handler(message: Message):
 
 async def main():
    await ai.init_assistant(ID_ASSISTANT)
+   await ai.update_assistant()
    await bot.delete_webhook(drop_pending_updates=True)
    await dp.start_polling(bot)
 
