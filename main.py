@@ -1,6 +1,7 @@
 from aiogram import Bot, Dispatcher, F
 from aiogram.filters import Command
 from aiogram.types import Message
+from aiogram.fsm.context import FSMContext
 
 import asyncio  
 import ai_helper.ai_helper as AI
@@ -10,15 +11,17 @@ from file_manager.file_manager import FileManager
 
 from amplitude_client.amplitude_client import ObserverEvent
 
+from database.redis import storage
+
 TOKEN_API = TOKEN_API_BOT
 bot = Bot(TOKEN_API)
-dp = Dispatcher()
+dp = Dispatcher(storage = storage)
 
 ai = AI.AI()
 observer = ObserverEvent()
 
 @dp.message(F.voice)
-async def voice_message_handler(message:Message):
+async def voice_message_handler(message:Message, state: FSMContext):
 
     if ai.permission is True:
         file_name = await FileManager.get_voice_file(bot, message)
@@ -27,7 +30,7 @@ async def voice_message_handler(message:Message):
         question = await ai.voice_to_text(file_name)
 
         await message.answer("Получаю ответ...")
-        answer, status = await ai.get_answer(question, message.from_user.id)
+        answer, status = await ai.get_answer(question, message.from_user.id, state, message.chat.id)
     
         if(status is False):
             message.reply(answer)

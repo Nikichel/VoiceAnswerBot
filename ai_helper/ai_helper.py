@@ -29,13 +29,15 @@ class AI:
                             communication. If any values are found, then call the save_value function. Don't forget 
                             to continue your ordinary dialogue with the user after you call save_value function.
                         """,
-                    model='gpt-4',
+                    model='gpt-4o',
                     tools= assistant_tools
                 )
                 print(self.__assistant.id)
                 self.permission = True
         except openai.PermissionDeniedError:
             self.permission = False
+        self.updated = self.__assistant.tool_resources is not None
+        print(self.updated)
 
     #Преобразование текста в звук (OpenAI TTS API)
     async def text_to_voice(self, file_name, answer):
@@ -51,10 +53,24 @@ class AI:
         audio = FSInputFile(speech_file_path)
         return audio
 
+    async def crate_thread(self, state, chat_id):
+        data = await state.get_data()
+        thread_id = data.get(str(chat_id))
+
+        if not thread_id:
+            try:
+                thread = await AI.__client.beta.threads.create()
+                thread_id = thread.id
+                await state.update_data({str(chat_id): str(thread_id)})
+            except Exception as e:
+                print(f"Failed to create thread for chat_id {chat_id}: {e}")
+                return None
+        return thread
+
     #Получение ответа из голосового сообщения (OpenAI Assistant API)
-    async def get_answer(self, question, user_id):
+    async def get_answer(self, question, user_id, state, chat_id):
         
-        thread = await AI.__client.beta.threads.create()
+        thread = await self.crate_thread(state, chat_id)
 
         await AI.__client.beta.threads.messages.create(
             thread_id=thread.id,
@@ -67,7 +83,7 @@ class AI:
             assistant_id=self.__assistant.id,
             tool_choice="required"
         )
-
+        print(run.status)
         while run.status in ['completed', 'requires_action', 'failed']:
             
             print(run.status)
@@ -81,8 +97,7 @@ class AI:
             elif run.status == 'completed':
                 messages = await AI.__client.beta.threads.messages.list(thread_id=thread.id)
                 answer = messages.data[0].content[0].text.value
-                
-                print(userid_and_values)
+            
                 return answer, True 
         return "Задача все еще выполняется или имеет неизвестный статус.", False
 
@@ -90,7 +105,6 @@ class AI:
         tool_outputs = []
         userid_and_values = []
         for tool in run.required_action.submit_tool_outputs.tool_calls:
-            print(tool.function.arguments)
             value_dict = json.loads(tool.function.arguments)
             values = value_dict.get('values', [])
 
@@ -141,9 +155,7 @@ class AI:
                 for tool_call in tool_calls:
                     if tool_call.function:
                         function_arguments = json.loads(tool_call.function.arguments)
-                        print(function_arguments)
                         is_value = function_arguments['is_value']
-                        print(is_value)
             return is_value
         except Exception as e:
             print(f"Error while checking if '{value}' is a key life value: {e}")
@@ -170,7 +182,7 @@ class AI:
                     "content": [
                         {
                         "type": "text",
-                        "text": "Identify the emotions in the pictures and return only the names of the emotions you identified without comments. Emotions must be in Russian"
+                        "text": "Identify the emotions in the pictures and return only the names of the emotions you identified with a bit comments. Emotions must be in Russian"
                         },
                         {
                         "type": "image_url",
@@ -191,33 +203,40 @@ class AI:
 
 
     async def update_assistant(self):
+        if(self.updated is False):
+            vector_store = await AI.__client.beta.vector_stores.create(name="anxiety")
 
-        vector_store = await AI.__client.beta.vector_stores.create(name="anxiety")
+            file_paths = ["anxiety.docx"]
+            file_streams = [open(path, "rb") for path in file_paths]
 
-        file_paths = ["anxiety.docx"]
-        file_streams = [open(path, "rb") for path in file_paths]
+            file_batch = await AI.__client.beta.vector_stores.file_batches.upload_and_poll(
+                vector_store_id=vector_store.id, files=file_streams
+            )
 
-        await AI.__client.beta.vector_stores.file_batches.upload_and_poll(
-            vector_store_id=vector_store.id, files=file_streams
-        )
+            print(file_batch.status)
+            print(file_batch.file_counts)
 
-        current_instructions = self.__assistant.instructions
-        additional_instructions= """
-            If the user asks a question about anxiety, then use the file_search
-            function to find the answer, when sending the answer to the user,
-            always add the file name after the quoted text.
-            """
-        updated_instructions = f"{current_instructions}\n{additional_instructions}"
-        current_tools = self.__assistant.tools
-        new_tools = [
-            {
-                "type": "file_search",
-            }
-        ]        
-        updated_tools = current_tools + new_tools
-        self.__assistant = await AI.__client.beta.assistants.update(
-            assistant_id=self.__assistant.id,
-            tools=updated_tools,
-            tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}},
-            instructions=updated_instructions,
-        )
+            current_instructions = self.__assistant.instructions
+            additional_instructions= """
+                When a user asks about anxiety, use your file_search tool to answer the question and add at the end the titile of document. 
+                Quote sentences from the knowledge base. Also don't forget call the save_value function
+                """
+            updated_instructions = f"{current_instructions}{additional_instructions}"
+            updated_instructions = '\n'.join(filter(None, updated_instructions.splitlines()))
+            print(updated_instructions)
+
+            current_tools = self.__assistant.tools
+            new_tools = [
+                {
+                    "type": "file_search",
+                }
+            ]        
+            updated_tools = current_tools + new_tools
+            print(updated_tools)
+
+            self.__assistant = await AI.__client.beta.assistants.update(
+                assistant_id=self.__assistant.id,
+                tools=updated_tools,
+                tool_resources={"file_search": {"vector_store_ids": [vector_store.id]}},
+                instructions=updated_instructions,
+            )
