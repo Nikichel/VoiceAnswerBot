@@ -40,7 +40,7 @@ async def voice_message_handler(message:Message, state: FSMContext):
             audio = await ai.text_to_voice(file_name, answer)
             await bot.send_voice(message.chat.id, audio, reply_to_message_id=message.message_id)
         
-        observer.send_event_to_amplitude("voise_question", message.from_user.id)
+        observer.track_event("voise_question", message.from_user.id)
         FileManager.remove_files(file_name)
     
     else:
@@ -58,7 +58,7 @@ async def photo_message_handler(message: Message):
 
     await bot.send_voice(message.chat.id, audio, reply_to_message_id=message.message_id)
 
-    observer.send_event_to_amplitude("photo_emotion", message.from_user.id)
+    observer.track_event("photo_emotion", message.from_user.id)
     FileManager.remove_files(file_name_photo)
 
 
@@ -67,13 +67,13 @@ async def start_handler(message: Message):
     greeting = f'Привет, {message.from_user.full_name}! Я бот для получения аудио ответов!'
     instruction = 'Отправь мне голосовое сообщение с вопросом, а я найду ответ и озвучу его для тебя! Все просто ;)'
 
-    observer.send_event_to_amplitude("user_start", message.from_user.id)
+    observer.track_event("user_start", message.from_user.id)
     await message.answer(greeting) 
     await message.answer(instruction)
 
 @dp.message()
 async def default_handler(message: Message):
-    observer.send_event_to_amplitude("unknown_command", message.from_user.id)
+    observer.track_event("unknown_command", message.from_user.id)
     await message.answer("Я не знаю, что мне делать с этим :(")
     await message.answer("Отправь голосовое сообщение с вопросом, а я отвечу на него!")
 
