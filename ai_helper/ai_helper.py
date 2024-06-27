@@ -36,7 +36,7 @@ class AI:
                 self.permission = True
         except openai.PermissionDeniedError:
             self.permission = False
-        self.updated = self.__assistant.tool_resources is not None
+        self.updated = self.__assistant.tool_resources.file_search is not None
         print(self.updated)
 
     #Преобразование текста в звук (OpenAI TTS API)
@@ -218,8 +218,8 @@ class AI:
 
             current_instructions = self.__assistant.instructions
             additional_instructions= """
-                When a user asks about anxiety, use your file_search tool to answer the question and add at the end the titile of document. 
-                Quote sentences from the knowledge base. Also don't forget call the save_value function
+                When a user asks about anxiety, quote the answer from file_search tool add add the title of the document where the quote came from at the end . 
+                Also don't forget call the save_value function
                 """
             updated_instructions = f"{current_instructions}{additional_instructions}"
             updated_instructions = '\n'.join(filter(None, updated_instructions.splitlines()))

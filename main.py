@@ -78,7 +78,7 @@ async def default_handler(message: Message):
     await message.answer("Отправь голосовое сообщение с вопросом, а я отвечу на него!")
 
 async def main():
-   await ai.init_assistant(ID_ASSISTANT)
+   await ai.init_assistant()
    await ai.update_assistant()
    await bot.delete_webhook(drop_pending_updates=True)
    await dp.start_polling(bot)
