@@ -8,5 +8,8 @@ services:
 
   redis:
     image: "redis:latest"
+    restart: always
     ports:
       - "${REDIS_PORT}:6379"
+    environment:
+      - REDIS_PASSWORD=my-password
