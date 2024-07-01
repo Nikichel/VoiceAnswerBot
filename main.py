@@ -5,17 +5,17 @@ from aiogram.fsm.context import FSMContext
 
 import asyncio  
 import ai_helper.ai_helper as AI
-from config import TOKEN_API_BOT, ID_ASSISTANT
+from config import TOKEN_API_BOT
 
 from file_manager.file_manager import FileManager
 
 from amplitude_client.amplitude_client import ObserverEvent
 
-from database.redis import storage
+#from database.redis import storage
 
 TOKEN_API = TOKEN_API_BOT
 bot = Bot(TOKEN_API)
-dp = Dispatcher(storage = storage)
+dp = Dispatcher()#storage = storage)
 
 ai = AI.AI()
 observer = ObserverEvent()
