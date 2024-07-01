@@ -65,21 +65,21 @@ class AI:
             except Exception as e:
                 print(f"Failed to create thread for chat_id {chat_id}: {e}")
                 return None
-        return thread
+        return thread_id
 
     #Получение ответа из голосового сообщения (OpenAI Assistant API)
     async def get_answer(self, question, user_id, state, chat_id):
         
-        thread = await self.crate_thread(state, chat_id)
+        thread_id = await self.crate_thread(state, chat_id)
 
         await AI.__client.beta.threads.messages.create(
-            thread_id=thread.id,
+            thread_id=thread_id,
             role='user',
             content=question
         )
 
         run = await AI.__client.beta.threads.runs.create_and_poll(
-            thread_id=thread.id, 
+            thread_id=thread_id, 
             assistant_id=self.__assistant.id,
             tool_choice="required"
         )
@@ -88,20 +88,20 @@ class AI:
             
             print(run.status)
             if run.status == 'requires_action':
-                run, userid_and_values = await self.get_values(user_id, thread, run)
+                run, userid_and_values = await self.get_values(user_id, thread_id, run)
                 await self.validate_values(userid_and_values, question)
             
             elif run.status == 'failed':
                 return "Задача не была выполнена.", False
             
             elif run.status == 'completed':
-                messages = await AI.__client.beta.threads.messages.list(thread_id=thread.id)
+                messages = await AI.__client.beta.threads.messages.list(thread_id=thread_id)
                 answer = messages.data[0].content[0].text.value
             
                 return answer, True 
         return "Задача все еще выполняется или имеет неизвестный статус.", False
 
-    async def get_values(self, user_id, thread, run):
+    async def get_values(self, user_id, thread_id, run):
         tool_outputs = []
         userid_and_values = []
         for tool in run.required_action.submit_tool_outputs.tool_calls:
@@ -120,7 +120,7 @@ class AI:
         if tool_outputs:
             try:
                 run = await AI.__client.beta.threads.runs.submit_tool_outputs_and_poll(
-                            thread_id=thread.id,
+                            thread_id=thread_id,
                             run_id=run.id,
                             tool_outputs=tool_outputs
                         )
