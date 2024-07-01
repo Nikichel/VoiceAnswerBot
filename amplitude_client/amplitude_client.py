@@ -24,7 +24,7 @@ class ObserverEvent(object):
                 user_id=str(user_id)
             )
         
-        amplitude.trtrack_eventack(event)
+        amplitude.track(event)
         print(f"{event_type}: {user_id} send")
 
     def track_event(cls, event_name, user_id):
